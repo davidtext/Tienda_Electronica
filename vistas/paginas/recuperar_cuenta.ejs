@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Cuenta - Tienda Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-dark text-light d-flex justify-content-center align-items-center vh-100">
+
+    <div class="card bg-secondary p-4 shadow-lg border-0" style="width: 26rem; border-radius: 12px;">
+        <div class="text-center mb-4">
+            <i class="fa-solid fa-user-shield fs-1 text-warning mb-2"></i>
+            <h4 class="fw-bold m-0" id="tituloRecuperar">Recuperar tu Cuenta</h4>
+            <p class="text-light opacity-75 small mt-1" id="subtituloRecuperar">Ingresá tu DNI registrado para localizar tu cuenta</p>
+        </div>
+        
+        <form id="formBuscarDni">
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Número de DNI / CUIL</label>
+                <input type="text" class="form-control text-center fw-bold fs-5" name="dni" placeholder="Ej: 40123456" required>
+            </div>
+            <button type="button" class="btn btn-warning text-dark w-100 fw-bold fs-6 shadow-sm" onclick="buscarCuentaPorDni()">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Verificar Identidad
+            </button>
+        </form>
+
+        <form id="formEnviarCodigo" class="d-none">
+            <input type="hidden" id="clienteIdOculto" name="id_cliente">
+            
+            <p class="small text-light opacity-75 mb-3">Identidad confirmada. Selecciona a qué correo deseas recibir el código de verificación para restablecer tu clave:</p>
+            
+            <div class="form-check p-3 bg-dark rounded border border-secondary mb-2 cursor-pointer" onclick="document.getElementById('radioPrincipal').checked=true">
+                <input class="form-check-input ms-1" type="radio" name="destino_correo" id="radioPrincipal" value="principal" checked>
+                <label class="form-check-label fw-bold ms-2" for="radioPrincipal">
+                    📧 Correo Principal:
+                    <span class="d-block text-info small fw-normal font-monospace" id="textoCorreoPrincipal"></span>
+                </label>
+            </div>
+
+            <div class="form-check p-3 bg-dark rounded border border-secondary mb-4 cursor-pointer" id="boxCorreoAlternativo" onclick="document.getElementById('radioAlternativo').checked=true">
+                <input class="form-check-input ms-1" type="radio" name="destino_correo" id="radioAlternativo" value="alternativo">
+                <label class="form-check-label fw-bold ms-2" for="radioAlternativo">
+                    🔄 Correo de Respaldo:
+                    <span class="d-block text-warning small fw-normal font-monospace" id="textoCorreoAlternativo"></span>
+                </label>
+            </div>
+
+            <button type="button" class="btn btn-success w-100 fw-bold fs-6 shadow-sm mb-3" onclick="enviarCodigoSeguridad()">
+                <i class="fa-solid fa-paper-plane me-1"></i> Enviar Código de 6 Dígitos
+            </button>
+        </form>
+
+        <div class="text-center border-top border-secondary pt-3 mt-2">
+            <a href="/tienda/login" class="text-light small text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i> Volver al login</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Función 1: Buscar la cuenta por DNI
+        function buscarCuentaPorDni() {
+            const form = document.getElementById('formBuscarDni');
+            if(!form.checkValidity()) return form.reportValidity();
+            const data = Object.fromEntries(new FormData(form));
+
+            Swal.fire({ title: 'Buscando registros...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+            fetch('/api/tienda/recuperar-cuenta/buscar-dni', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                Swal.close();
+                if (res.status === 'success') {
+                    // Ocultamos el formulario del DNI y mostramos las opciones de correos
+                    document.getElementById('formBuscarDni').classList.add('d-none');
+                    document.getElementById('formEnviarCodigo').classList.remove('d-none');
+                    
+                    // Cambiamos títulos
+                    document.getElementById('tituloRecuperar').textContent = `¡Hola, ${res.nombre}!`;
+                    document.getElementById('subtituloRecuperar').textContent = "Seleccioná dónde recibir el código";
+
+                    // Inyectamos los correos completos descubiertos
+                    document.getElementById('clienteIdOculto').value = res.id_cliente;
+                    document.getElementById('textoCorreoPrincipal').textContent = res.email;
+                    
+                    if (res.email_alternativo) {
+                        document.getElementById('textoCorreoAlternativo').textContent = res.email_alternativo;
+                    } else {
+                        // Si no registró alternativo, bloqueamos la opción
+                        document.getElementById('boxCorreoAlternativo').classList.add('opacity-50');
+                        document.getElementById('radioAlternativo').disabled = true;
+                        document.getElementById('textoCorreoAlternativo').textContent = "No registraste un correo de respaldo.";
+                    }
+                } else {
+                    Swal.fire('Atención', res.message, 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Error de conexión con el servidor', 'error'));
+        }
+
+        // Función 2: Enviar el código al correo seleccionado
+        function enviarCodigoSeguridad() {
+            const form = document.getElementById('formEnviarCodigo');
+            const data = Object.fromEntries(new FormData(form));
+
+            Swal.fire({ title: 'Enviando código de seguridad...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+            fetch('/api/tienda/recuperar-cuenta/enviar-codigo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    Swal.fire('¡Código Enviado!', res.message, 'success').then(() => {
+                        window.location.href = '/tienda/reestablecer-password';
+                    });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

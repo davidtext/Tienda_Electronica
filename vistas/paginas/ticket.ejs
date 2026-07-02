@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket de Venta #<%= ticket.cabecera.id %>
+    </title>
+    <style>
+        /* Estilos para impresora térmica (58mm u 80mm) */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            color: #000;
+            margin: 0;
+            padding: 15px;
+            width: 300px;
+            background-color: #fff;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .divisor {
+            border-top: 1px dashed #000;
+            margin: 10px 0;
+        }
+
+        /* Cajas flexibles para alinear perfectamente los números */
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .col-izq {
+            width: 40%;
+        }
+
+        .col-cen {
+            width: 20%;
+            text-align: center;
+        }
+
+        .col-der {
+            width: 40%;
+            text-align: right;
+        }
+
+        @media print {
+            @page {
+                margin: 0;
+            }
+
+            body {
+                margin: 1cm;
+                width: auto;
+                max-width: 80mm;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body onload="window.print(); window.onafterprint = function(){ window.close(); }">
+
+    <div class="text-center">
+        <h2 style="margin: 5px 0;">TIENDA ELECTRÓNICA</h2>
+        <p style="margin: 2px 0;">Av. Siempreviva 123</p>
+        <br>
+        <p style="margin: 2px 0;">Ticket N°: <%= ticket.cabecera.id %>
+        </p>
+        <p style="margin: 2px 0;">Fecha: <%= new Date(ticket.cabecera.fecha_hora).toLocaleString('es-AR') %>
+        </p>
+        <p style="margin: 2px 0;">Cajero/a: <%= ticket.cabecera.nombre %>
+                <%= ticket.cabecera.apellido %>
+        </p>
+        <br>
+        <p style="margin: 2px 0;">Cliente: <%= ticket.cabecera.cli_nombre==='Consumidor' ? 'Consumidor Final' :
+                ticket.cabecera.cli_nombre + ' ' + ticket.cabecera.cli_apellido %>
+        </p>
+        <% if (ticket.cabecera.cli_nombre !=='Consumidor' && ticket.cabecera.cli_dni) { %>
+            <p style="margin: 2px 0;">DNI/CUIL: <%= ticket.cabecera.cli_dni %>
+            </p>
+            <% } %>
+    </div>
+
+    <div class="divisor"></div>
+
+    <div class="flex-row bold" style="margin-bottom: 5px;">
+        <span class="col-izq">Producto</span>
+        <span class="col-cen">Cant</span>
+        <span class="col-der">Subt</span>
+    </div>
+
+    <div class="divisor"></div>
+
+    <% ticket.detalles.forEach(item=> { %>
+        <% let nombreLimitado=item.producto.length> 20
+            ? item.producto.substring(0, 20) + "..."
+            : item.producto;
+            %>
+            <div style="margin-bottom: 10px;">
+                <div style="margin-bottom: 3px; font-weight: bold;">
+                    <%= nombreLimitado %>
+                </div>
+
+                <div class="flex-row">
+                    <span class="col-izq text-muted" style="font-size: 11px; color: #555;">
+                        <%= item.sku %>
+                    </span>
+                    <span class="col-cen">
+                        <%= item.cantidad %>
+                    </span>
+                    <span class="col-der">$ <%= Number(item.cantidad * item.precio_unitario).toLocaleString('es-AR') %>
+                    </span>
+                </div>
+            </div>
+            <% }) %>
+
+                <div class="divisor"></div>
+
+                <% if (Number(ticket.cabecera.descuento_aplicado)> 0) { %>
+                    <p class="text-right" style="margin: 2px 0; color: #555;">Subtotal: $ <%=
+                            Number(ticket.cabecera.total_venta).toLocaleString('es-AR') %>
+                    </p>
+                    <p class="text-right bold" style="margin: 2px 0;">Descuento: -$ <%=
+                            Number(ticket.cabecera.descuento_aplicado).toLocaleString('es-AR') %>
+                    </p>
+                    <h3 class="text-right" style="margin: 5px 0;">
+                        TOTAL: $ <%= (Number(ticket.cabecera.total_venta) -
+                            Number(ticket.cabecera.descuento_aplicado)).toLocaleString('es-AR') %>
+                    </h3>
+                    <% } else { %>
+                        <h3 class="text-right" style="margin: 5px 0;">
+                            TOTAL: $ <%= Number(ticket.cabecera.total_venta).toLocaleString('es-AR') %>
+                        </h3>
+                        <% } %>
+
+                            <div style="margin-top: 10px;">
+                                <p class="text-right" style="margin: 2px 0; text-decoration: underline;">Detalle de
+                                    Pago:</p>
+                                <% ticket.pagos.forEach(p=> { %>
+                                    <p class="text-right" style="margin: 2px 0;">
+                                        <%= p.metodo_pago %>: $ <%= Number(p.monto).toLocaleString('es-AR') %>
+                                    </p>
+                                    <% }) %>
+
+                                        <% if(Number(ticket.cabecera.vuelto)> 0) { %>
+                                            <p class="text-right bold" style="margin: 5px 0;">Vuelto: $ <%=
+                                                    Number(ticket.cabecera.vuelto).toLocaleString('es-AR') %>
+                                            </p>
+                                            <% } %>
+                            </div>
+
+                            <br>
+                            <div class="text-center" style="margin-top: 10px;">
+                                <p>¡Gracias por su compra!</p>
+                            </div>
+
+</body>
+
+</html>

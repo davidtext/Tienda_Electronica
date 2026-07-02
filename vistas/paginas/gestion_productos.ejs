@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <style>
+        .preview-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <%- include('../componentes/navbar') %>
+
+        <div class="container-fluid mt-4 px-4">
+            <h2 class="mb-4 text-primary fw-bold"><i class="fa-solid fa-boxes-stacked me-2"></i>Gestión de Productos
+            </h2>
+
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0">Cargar Nuevo Producto</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="formCrearProducto" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted fw-bold">SKU (Código Interno)</label>
+                                    <input type="text" name="sku" class="form-control" placeholder="Ej: SAM-S23-001"
+                                        required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted fw-bold">Nombre del Producto</label>
+                                    <input type="text" name="nombre" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted fw-bold">Descripción</label>
+                                    <textarea name="descripcion" class="form-control" rows="2"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted fw-bold">Imágenes (Máximo 5)</label>
+                                    <input type="file" id="inputImagenesNuevo" name="imagenes" class="form-control"
+                                        accept="image/png, image/jpeg, image/webp" multiple>
+                                    <div id="previewNuevo" class="d-flex gap-2 mt-2 flex-wrap"></div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted fw-bold">Precio de Venta ($)</label>
+                                        <input type="text" step="0.01" name="precio_venta"
+                                            class="form-control input-precio" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-muted fw-bold">Stock Inicial</label>
+                                        <input type="number" class="form-control" value="0" disabled>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-muted fw-bold">Categoría</label>
+                                    <select name="FK_categoria" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione...</option>
+                                        <% categorias.forEach(function(cat) { %>
+                                            <option value="<%= cat.id %>">
+                                                <%= cat.nombre %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label text-muted fw-bold">Marca</label>
+                                    <select name="FK_marca" class="form-select" required>
+                                        <option value="" disabled selected>Seleccione...</option>
+                                        <% marcas.forEach(function(marca) { %>
+                                            <option value="<%= marca.id %>">
+                                                <%= marca.nombre %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                                    <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Producto
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title text-secondary m-0">Inventario Registrado</h5>
+                                <form action="/gestion-productos" method="GET" class="d-flex w-50">
+                                    <div class="input-group">
+                                        <input type="text" name="busqueda" class="form-control"
+                                            placeholder="Buscar por nombre o SKU..."
+                                            value="<%= typeof busqueda !== 'undefined' ? busqueda : '' %>">
+                                        <% if (typeof busqueda !=='undefined' && busqueda) { %>
+                                            <a href="/gestion-productos" class="btn btn-outline-danger"
+                                                title="Limpiar búsqueda"><i class="fa-solid fa-times"></i></a>
+                                            <% } %>
+                                                <button class="btn btn-primary" type="submit"><i
+                                                        class="fa-solid fa-search"></i></button>
+                                                <button class="btn btn-success ms-2 fw-bold" type="button"
+                                                    data-bs-toggle="modal" data-bs-target="#modalDescuentoMasivo"
+                                                    title="Aplicar descuento a toda una categoría">
+                                                    <i class="fa-solid fa-tags"></i> Descuento Masivo
+                                                </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover table-bordered align-middle text-center">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Categoría</th>
+                                            <th>Precio</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% productos.forEach(function(prod) { %>
+                                            <tr>
+                                                <td>
+                                                    <%= prod.id %>
+                                                </td>
+                                                <td class="text-start fw-bold">
+                                                    <%= prod.nombre %> <br><small class="text-muted">SKU: <%= prod.sku
+                                                                %></small>
+                                                </td>
+                                                <td><span class="badge bg-secondary">
+                                                        <%= prod.nombre_categoria %>
+                                                    </span></td>
+                                                <td class="text-success fw-bold">$<%=
+                                                        Number(prod.precio).toLocaleString('es-AR') %>
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" title="Editar"
+                                                        data-id="<%= prod.id %>" data-sku="<%= prod.sku %>"
+                                                        data-nombre="<%= prod.nombre %>"
+                                                        data-descripcion="<%= prod.descripcion || '' %>"
+                                                        data-precio="<%= prod.precio %>"
+                                                        data-categoria="<%= prod.FK_categoria %>"
+                                                        data-marca="<%= prod.FK_marca %>"
+                                                        onclick="abrirModalEditar(this)">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                                        onclick="borrarProducto('<%= prod.id %>')">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                                <% if (productos.length===0) { %>
+                                                    <tr>
+                                                        <td colspan="5" class="text-center text-muted py-4">No se
+                                                            encontraron productos.</td>
+                                                    </tr>
+                                                    <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <% if (typeof totalPaginas !=='undefined' && totalPaginas> 1) { %>
+                                <nav class="mt-3">
+                                    <ul class="pagination justify-content-center shadow-sm">
+                                        <li class="page-item <%= paginaActual === 1 ? 'disabled' : '' %>">
+                                            <a class="page-link"
+                                                href="/gestion-productos?pagina=<%= paginaActual - 1 %>&busqueda=<%= typeof busqueda !== 'undefined' ? busqueda : '' %>">Anterior</a>
+                                        </li>
+                                        <% for (let i=1; i <=totalPaginas; i++) { %>
+                                            <li class="page-item <%= paginaActual === i ? 'active' : '' %>">
+                                                <a class="page-link"
+                                                    href="/gestion-productos?pagina=<%= i %>&busqueda=<%= typeof busqueda !== 'undefined' ? busqueda : '' %>">
+                                                    <%= i %>
+                                                </a>
+                                            </li>
+                                            <% } %>
+                                                <li
+                                                    class="page-item <%= paginaActual === totalPaginas ? 'disabled' : '' %>">
+                                                    <a class="page-link"
+                                                        href="/gestion-productos?pagina=<%= paginaActual + 1 %>&busqueda=<%= typeof busqueda !== 'undefined' ? busqueda : '' %>">Siguiente</a>
+                                                </li>
+                                    </ul>
+                                </nav>
+                                <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalEditarProducto" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2"></i>Editar Producto</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formEditarProducto" enctype="multipart/form-data">
+                            <input type="hidden" id="edit_id" name="id">
+
+                            <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">Agregar Nuevas Imágenes</label>
+                                <input type="file" id="inputImagenesEdit" name="imagenes" class="form-control"
+                                    accept="image/png, image/jpeg, image/webp" multiple>
+                                <div id="previewEdit" class="d-flex gap-2 mt-2 flex-wrap"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">SKU (No editable)</label>
+                                <input type="text" id="edit_sku" class="form-control bg-body-secondary text-muted"
+                                    readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">Nombre</label>
+                                <input type="text" id="edit_nombre" name="nombre" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">Descripción</label>
+                                <textarea id="edit_descripcion" name="descripcion" class="form-control"
+                                    rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">Precio de Venta ($)</label>
+                                <input type="text" step="0.01" id="edit_precio" name="precio_venta"
+                                    class="form-control input-precio" required>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 mb-4">
+                                    <label class="form-label text-muted fw-bold">Categoría</label>
+                                    <select id="edit_categoria" name="FK_categoria" class="form-select" required>
+                                        <% categorias.forEach(function(cat) { %>
+                                            <option value="<%= cat.id %>">
+                                                <%= cat.nombre %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+                                </div>
+                                <div class="col-6 mb-4">
+                                    <label class="form-label text-muted fw-bold">Marca</label>
+                                    <select id="edit_marca" name="FK_marca" class="form-select" required>
+                                        <% marcas.forEach(function(marca) { %>
+                                            <option value="<%= marca.id %>">
+                                                <%= marca.nombre %>
+                                            </option>
+                                            <% }); %>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 fw-bold">Guardar Cambios</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalDescuentoMasivo" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-tags me-2"></i>Aplicar Descuento Masivo
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning small mb-4">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Se aplicará el porcentaje de descuento
+                            a <strong>todos los productos activos</strong> de la categoría seleccionada. Para quitar un
+                            descuento previo, aplica "0%".
+                        </div>
+                        <form id="formDescuentoMasivo" onsubmit="aplicarDescuentoMasivo(event)">
+                            <div class="mb-3">
+                                <label class="form-label text-muted fw-bold">Categoría a Rebajar</label>
+                                <select name="id_categoria" class="form-select border-success-subtle shadow-sm"
+                                    required>
+                                    <option value="" disabled selected>Seleccione la categoría...</option>
+
+                                    <option value="TODOS" class="fw-bold text-primary">🌟 Todos los productos (Catálogo
+                                        completo)</option>
+
+                                    <% categorias.forEach(function(cat) { %>
+                                        <option value="<%= cat.id %>">
+                                            <%= cat.nombre %>
+                                        </option>
+                                        <% }); %>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label text-muted fw-bold">Porcentaje OFF (%)</label>
+                                <div class="input-group">
+                                    <input type="number" name="porcentaje"
+                                        class="form-control border-success-subtle shadow-sm" placeholder="Ej: 15"
+                                        min="0" max="99" required>
+                                    <span class="input-group-text bg-success text-white fw-bold">% OFF</span>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 fw-bold shadow-sm">
+                                <i class="fa-solid fa-bolt me-2"></i> ¡Aplicar Ahora!
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="/assets/js/carrito.js"></script>
+        <script>
+            // Encender el buscador inteligente en todos los selects de la página al cargar
+            $(document).ready(function() {
+                // Para el formulario de Crear Producto y Descuento Masivo
+                $('select').select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: $(this).data('placeholder'),
+                    language: {
+                        noResults: function() {
+                            return "No se encontró ningún resultado";
+                        }
+                    }
+                });
+
+                // Como el modal de Editar está oculto, hay que inicializar el Select2 
+                // indicándole que su "contenedor padre" es el modal, si no, la lupita no te deja escribir
+                $('#modalEditarProducto').on('shown.bs.modal', function () {
+                    $('#edit_categoria, #edit_marca').select2({
+                        theme: 'bootstrap-5',
+                        dropdownParent: $('#modalEditarProducto'),
+                        width: '100%'
+                    });
+                });
+            });
+
+            // MODO OSCURO GLOBAL
+            const temaActual = localStorage.getItem('temaTienda');
+            const esOscuro = temaActual === 'dark';
+            if (esOscuro) document.documentElement.setAttribute('data-bs-theme', 'dark');
+
+            // FORMATO MONEDA
+            document.querySelectorAll('.input-precio').forEach(input => {
+                input.addEventListener('input', function (e) {
+                    let valor = this.value.replace(/[^0-9,]/g, '').replace(/\./g, '');
+                    let partes = valor.split(',');
+                    partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    if (partes.length > 2) partes = [partes[0], partes.slice(1).join('')];
+                    if (partes[1] && partes[1].length > 2) partes[1] = partes[1].substring(0, 2);
+                    this.value = partes.join(',');
+                });
+            });
+
+            function desformatearMoneda(valorString) {
+                if (!valorString || valorString.trim() === '') return 0;
+                return parseFloat(valorString.replace(/\./g, '').replace(',', '.'));
+            }
+
+            // ==========================================
+            // LÓGICA DE VISTA PREVIA DE IMÁGENES
+            // ==========================================
+            function manejarPreview(inputId, previewId) {
+                document.getElementById(inputId).addEventListener('change', function (e) {
+                    const preview = document.getElementById(previewId);
+                    preview.innerHTML = ''; // Limpiamos preview anterior
+
+                    if (this.files.length > 5) {
+                        Swal.fire('Límite excedido', 'Solo puedes subir un máximo de 5 imágenes.', 'warning');
+                        this.value = ''; // Resetea el input
+                        return;
+                    }
+
+                    Array.from(this.files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            img.className = 'preview-img shadow-sm';
+                            preview.appendChild(img);
+                        }
+                        reader.readAsDataURL(file);
+                    });
+                });
+            }
+
+            manejarPreview('inputImagenesNuevo', 'previewNuevo');
+            manejarPreview('inputImagenesEdit', 'previewEdit');
+
+            // 1. ENVIAR FORMULARIO CREAR
+            document.getElementById('formCrearProducto').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const sku = document.querySelector('input[name="sku"]').value.trim();
+                const precioInput = document.querySelector('input[name="precio_venta"]');
+                const precioLimpio = desformatearMoneda(precioInput.value);
+
+                if (precioLimpio <= 0) return Swal.fire('Error', 'El precio debe ser mayor a 0.', 'warning');
+                if (sku.includes(" ")) return Swal.fire('Cuidado', 'El código SKU no debería contener espacios.', 'warning');
+
+                precioInput.value = precioLimpio;
+                const formData = new FormData(this);
+
+                fetch('/gestion-productos/crear', {
+                    method: 'POST',
+                    body: formData // Ajax manda el multipart form con las 5 fotos
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') Swal.fire('¡Éxito!', data.message, 'success').then(() => location.reload());
+                        else Swal.fire('Atención', data.message, 'error');
+                    });
+            });
+
+            // 2. ABRIR MODAL EDITAR
+            function abrirModalEditar(boton) {
+                document.getElementById('edit_id').value = boton.getAttribute('data-id');
+                document.getElementById('edit_sku').value = boton.getAttribute('data-sku');
+                document.getElementById('edit_nombre').value = boton.getAttribute('data-nombre');
+                document.getElementById('edit_descripcion').value = boton.getAttribute('data-descripcion');
+
+                const precioReal = boton.getAttribute('data-precio');
+                const inputEditPrecio = document.getElementById('edit_precio');
+                inputEditPrecio.value = precioReal.replace('.', ',');
+                inputEditPrecio.dispatchEvent(new Event('input'));
+
+                document.getElementById('edit_categoria').value = boton.getAttribute('data-categoria');
+                document.getElementById('edit_marca').value = boton.getAttribute('data-marca');
+
+                // Limpiamos el input de archivos y el preview viejo
+                document.getElementById('inputImagenesEdit').value = '';
+                document.getElementById('previewEdit').innerHTML = '';
+
+                new bootstrap.Modal(document.getElementById('modalEditarProducto')).show();
+            }
+
+            // 3. ENVIAR FORMULARIO EDITAR
+            document.getElementById('formEditarProducto').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const inputEditPrecio = document.getElementById('edit_precio');
+                const precioLimpio = desformatearMoneda(inputEditPrecio.value);
+
+                if (precioLimpio <= 0) return Swal.fire('Error', 'El precio debe ser mayor a 0.', 'warning');
+
+                inputEditPrecio.value = precioLimpio;
+                const formData = new FormData(this);
+
+                fetch('/gestion-productos/editar', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') Swal.fire('¡Actualizado!', data.message, 'success').then(() => location.reload());
+                        else Swal.fire('Error', data.message, 'error');
+                    });
+            });
+
+            // 4. BORRAR PRODUCTO
+            function borrarProducto(id) {
+                Swal.fire({
+                    title: '¿Eliminar producto?',
+                    text: "El producto desaparecerá del catálogo.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonText: 'Sí, eliminar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/gestion-productos/borrar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: id })
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') Swal.fire('¡Eliminado!', data.message, 'success').then(() => location.reload());
+                                else Swal.fire('Error', data.message, 'error');
+                            });
+                    }
+                });
+            }
+
+            // 5. DESCUENTO MASIVO
+            function aplicarDescuentoMasivo(e) {
+                e.preventDefault();
+                const form = e.target;
+                const data = Object.fromEntries(new FormData(form));
+
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `Se aplicará un ${data.porcentaje}% de descuento a todos los productos de esa categoría. Impactará en la web de inmediato.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, aplicar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/gestion-productos/descuento-masivo', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        })
+                            .then(res => res.json())
+                            .then(res => {
+                                if (res.status === 'success') Swal.fire('¡Impactado!', res.message, 'success').then(() => location.reload());
+                                else Swal.fire('Error', res.message, 'error');
+                            });
+                    }
+                });
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

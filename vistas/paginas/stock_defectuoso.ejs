@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Defectuoso (RMA)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+
+<body class="bg-body-tertiary">
+
+    <%- include('../componentes/navbar') %>
+
+    <div class="container mt-4 mb-5">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold text-danger m-0"><i class="fa-solid fa-screwdriver-wrench me-2"></i>Mercadería en Garantía (RMA)</h3>
+                <p class="text-muted small m-0 mt-1">Productos separados del stock de ventas por fallas o daños de envío.</p>
+            </div>
+            <a href="/gestion-productos" class="btn btn-outline-secondary fw-bold shadow-sm">
+                <i class="fa-solid fa-arrow-left me-2"></i>Volver a Gestión
+            </a>
+        </div>
+
+        <div class="row mb-4 g-3 align-items-center">
+            <div class="col-md-4">
+                <div class="card bg-danger text-white border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4 d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 p-3 rounded-circle me-3">
+                            <i class="fa-solid fa-sack-dollar fa-2x"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-bold opacity-75 small text-uppercase tracking-wider">Capital Retenido</p>
+                            <h3 class="fw-bold m-0">$<%= Number(totalRetenido).toLocaleString('es-AR') %></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <form method="GET" action="/stock-defectuoso" class="bg-body p-3 rounded-4 shadow-sm border h-100 d-flex align-items-center">
+                    <div class="input-group">
+                        <input type="text" name="busqueda" class="form-control border-secondary-subtle" placeholder="Buscar por nombre o SKU de producto roto..." value="<%= busquedaActual %>">
+                        <button class="btn btn-danger fw-bold" type="submit"><i class="fa-solid fa-magnifying-glass me-1"></i> Buscar</button>
+                        <% if (busquedaActual) { %>
+                            <a href="/stock-defectuoso" class="btn btn-outline-secondary" title="Limpiar filtro"><i class="fa-solid fa-times"></i></a>
+                        <% } %>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle m-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="ps-3">ID</th>
+                                <th>Nombre</th>
+                                <th class="text-center">Unidades Rotas</th>
+                                <th class="text-end pe-4">Valor Aprox. a Reclamar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (productosRotos && productosRotos.length > 0) { %>
+                                <% productosRotos.forEach(prod => { %>
+                                    <tr>
+                                        <td class="ps-4 py-3 text-muted">#<%= prod.id %></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="<%= prod.imagen || '/assets/images/productos/default.png' %>" 
+                                                     class="rounded shadow-sm border border-secondary-subtle" 
+                                                     style="width: 50px; height: 50px; object-fit: contain; background: white;" alt="">
+                                                <div class="ms-3">
+                                                    <h6 class="fw-bold m-0 text-body"><%= prod.nombre %></h6>
+                                                    <small class="text-muted fw-semibold">SKU: <%= prod.sku %></small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger rounded-pill fs-6 px-3"><%= prod.stock_defectuoso %></span>
+                                        </td>
+                                        <td class="text-end pe-4 fw-bold text-danger">
+                                            $<%= Number(prod.precio_venta * prod.stock_defectuoso).toLocaleString('es-AR') %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <i class="fa-solid fa-box-check fa-3x text-success mb-3 opacity-50"></i>
+                                        <h5 class="fw-bold text-muted m-0">Sin novedades</h5>
+                                        <p class="text-muted small m-0 mt-1">No se encontraron productos rotos en esta página o búsqueda.</p>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <% if (totalPaginas > 1) { %>
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center shadow-sm">
+                    <li class="page-item <%= paginaActual === 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="<%= urlBase %>pagina=<%= paginaActual - 1 %>">Anterior</a>
+                    </li>
+
+                    <% for(let i=1; i <= totalPaginas; i++) { %>
+                        <li class="page-item <%= paginaActual === i ? 'active' : '' %>">
+                            <a class="page-link fw-bold" href="<%= urlBase %>pagina=<%= i %>"><%= i %></a>
+                        </li>
+                    <% } %>
+
+                    <li class="page-item <%= paginaActual === totalPaginas ? 'disabled' : '' %>">
+                        <a class="page-link" href="<%= urlBase %>pagina=<%= paginaActual + 1 %>">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        <% } %>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Pedido Registrado!</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+
+<body class="bg-dark text-light d-flex justify-content-center align-items-center min-vh-100 py-5">
+
+    <div class="card bg-secondary p-4 p-md-5 shadow-lg border-0 text-center"
+        style="width: 100%; max-width: 600px; border-radius: 12px;">
+        <div class="mb-4">
+            <div class="bg-warning rounded-circle d-inline-flex justify-content-center align-items-center mb-3 shadow"
+                style="width: 80px; height: 80px;">
+                <i class="fa-solid fa-clock text-dark" style="font-size: 3rem;"></i>
+            </div>
+            <h2 class="fw-bold text-white m-0">¡Tu pedido fue reservado!</h2>
+        </div>
+
+        <p class="text-light opacity-75 fs-5 mb-4">Orden de Compra: <strong class="text-white">#<%= id_venta %></strong>
+        </p>
+
+        <% if (metodo==='transferencia' ) { %>
+            <div class="bg-dark p-4 rounded mb-4 text-start border border-secondary-subtle shadow-sm">
+                <h5 class="fw-bold text-info mb-3"><i class="fa-solid fa-money-bill-transfer me-2"></i>Instrucciones de
+                    Pago:</h5>
+                <p class="text-muted small mb-3">Transfiere el monto total a la siguiente cuenta bancaria para que
+                    despachemos tu paquete.</p>
+
+                <ul class="list-group list-group-flush mb-4 rounded">
+                    <li class="list-group-item bg-body-tertiary text-body d-flex justify-content-between">
+                        <strong>Banco:</strong> <span>Banco Galicia</span>
+                    </li>
+                    <li class="list-group-item bg-body-tertiary text-body d-flex justify-content-between">
+                        <strong>Titular:</strong> <span>Tienda Electrónica SRL</span>
+                    </li>
+                    <li
+                        class="list-group-item bg-body-tertiary text-body d-flex justify-content-between align-items-center">
+                        <strong>CBU:</strong>
+                        <span class="user-select-all font-monospace fw-bold">0070000000000000123456</span>
+                    </li>
+                    <li class="list-group-item bg-body-tertiary text-body d-flex justify-content-between">
+                        <strong>Alias:</strong> <span
+                            class="user-select-all fw-bold text-primary">TIENDA.CELULARES</span>
+                    </li>
+                </ul>
+
+                <div class="text-center mt-4">
+                    <p class="small text-muted mb-2">Una vez transferido, envíanos el comprobante haciendo clic aquí:
+                    </p>
+                    <a href="https://api.whatsapp.com/send?phone=543704811577&text=¡Hola!%20Acá%20te%20envío%20el%20comprobante%20de%20pago%20por%20mi%20Orden%20%23<%= id_venta %>"
+                        target="_blank" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm">
+                        <i class="fa-brands fa-whatsapp fs-5 me-2 align-middle"></i> Enviar Comprobante por WhatsApp
+                    </a>
+                </div>
+            </div>
+            <% } else { %>
+                <div class="bg-dark p-4 rounded mb-4 text-start border border-secondary-subtle shadow-sm">
+                    <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-money-bill-wave me-2"></i>Pago en
+                        Efectivo (Local):</h5>
+                    <p class="text-muted small mb-3">Hemos reservado tus productos. Acércate a nuestro local con tu
+                        número de orden para pagar y retirar.</p>
+
+                    <div class="p-3 bg-body-tertiary rounded text-body text-center">
+                        <p class="m-0 fw-bold fs-5">Av. Siempreviva 123</p>
+                        <p class="m-0 text-muted">Horarios: Lunes a Sábados de 8hs a 12hs y 16hs a 20hs</p>
+                    </div>
+                </div>
+                <% } %>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-2">
+                        <a href="/tienda/mis-compras" class="btn btn-primary btn-lg fw-bold px-4">Ir a Mis Compras</a>
+                        <a href="/tienda" class="btn btn-outline-light btn-lg fw-bold px-4">Volver al inicio</a>
+                    </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+<nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold text-primary" href="/menu">💻 Tienda Electrónica</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/menu">Inicio</a>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="/productos">Productos</a></li>
+        <li class="nav-item"><a class="nav-link" href="/historial">Ventas</a></li>
+        <li class="nav-item"><a class="nav-link" href="/clientes">Clientes</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pedidos-web">Pedidos web</a></li>
+
+        <% if (usuario.rol_id===1) { %>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              ⚙️ Administración
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <li><a class="dropdown-item" href="/usuarios">👤 Gestion Personal</a></li>
+              <li><a class="dropdown-item" href="/gestion-productos">📦 Gestion productos</a></li>
+              <li><a class="dropdown-item" href="/parametros">🏷️ Gestion Categorías y Marcas</a></li>
+              <li><a class="dropdown-item" href="/stock/ingresos">📥 Ingresar Stock</a></li>
+              <li><a class="dropdown-item" href="/stock-defectuoso">🗑️ Stock defectuoso</a></li>
+              <li><a class="dropdown-item" href="/auditoria">📝 Auditoría (Log)</a></li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              <li><a class="dropdown-item" href="/reportes">Reportes Financieros</a></li>
+            </ul>
+          </li>
+          <% } %>
+      </ul>
+
+      <div class="d-flex align-items-center ms-3">
+
+        <a href="/pedidos-web" class="btn btn-outline-primary border-0 me-2 position-relative"
+          title="Pedidos Web Pendientes">
+          <i class="fa-solid fa-bell fs-5"></i>
+          <span id="badgeNotificaciones"
+            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+            style="font-size: 0.65rem;">
+            0
+          </span>
+        </a>
+
+        <button class="btn btn-outline-secondary border-0 me-3" id="btnModoOscuro" title="Cambiar Tema">
+          <i class="fa-solid fa-moon fs-5"></i>
+        </button>
+
+        <span class="navbar-text me-3 fw-bold text-body">
+          👤 <%= usuario.nombre_completo %>
+            <small class="text-muted">(<%= usuario.rol %>)</small>
+        </span>
+        <a href="/logout" class="btn btn-danger btn-sm">Salir</a>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const htmlElement = document.documentElement;
+    const btnModoOscuro = document.getElementById('btnModoOscuro');
+    const iconoTema = btnModoOscuro.querySelector('i');
+
+    // 1. Revisar si el usuario ya tenía un tema guardado
+    const temaGuardado = localStorage.getItem('temaTienda');
+    if (temaGuardado === 'dark') {
+      htmlElement.setAttribute('data-bs-theme', 'dark');
+      iconoTema.classList.replace('fa-moon', 'fa-sun');
+    } else {
+      htmlElement.setAttribute('data-bs-theme', 'light');
+    }
+
+    // 2. Cambiar el tema al hacer clic
+    btnModoOscuro.addEventListener('click', () => {
+      const temaActual = htmlElement.getAttribute('data-bs-theme');
+      if (temaActual === 'light') {
+        htmlElement.setAttribute('data-bs-theme', 'dark');
+        localStorage.setItem('temaTienda', 'dark');
+        iconoTema.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        htmlElement.setAttribute('data-bs-theme', 'light');
+        localStorage.setItem('temaTienda', 'light');
+        iconoTema.classList.replace('fa-sun', 'fa-moon');
+      }
+    });
+
+    // ==========================================
+    // 🔔 SISTEMA DE NOTIFICACIONES EN VIVO (POLLING)
+    // ==========================================
+    const badgeNotificaciones = document.getElementById('badgeNotificaciones');
+    let cantidadAnterior = 0; // Memoria para saber si entró uno NUEVO
+
+    // Creamos un audio invisible para el "Ding" de caja registradora
+    const sonidoNotificacion = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    sonidoNotificacion.volume = 0.5;
+
+    function revisarPedidosPendientes() {
+      fetch('/api/notificaciones/pedidos-pendientes')
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            const cantidadActual = data.cantidad;
+
+            // Si hay más de 0, mostramos la bolita roja
+            if (cantidadActual > 0) {
+              badgeNotificaciones.textContent = cantidadActual;
+              badgeNotificaciones.classList.remove('d-none');
+
+              // Si la cantidad subió (entró un pedido nuevo), hacemos sonar el DING!
+              if (cantidadActual > cantidadAnterior) {
+                sonidoNotificacion.play().catch(e => console.log('El navegador bloqueó el sonido automático.'));
+              }
+            } else {
+              // Si no hay pedidos, ocultamos la bolita
+              badgeNotificaciones.classList.add('d-none');
+            }
+
+            cantidadAnterior = cantidadActual; // Actualizamos la memoria
+          }
+        })
+        .catch(err => console.error('Error buscando notificaciones', err));
+    }
+
+    // Ejecutamos la búsqueda de inmediato al cargar la página
+    revisarPedidosPendientes();
+
+    // Hacemos que busque silenciosamente cada 15 segundos (15000 milisegundos)
+    setInterval(revisarPedidosPendientes, 15000);
+  });
+</script>

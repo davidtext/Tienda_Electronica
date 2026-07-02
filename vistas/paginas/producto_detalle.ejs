@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= producto.nombre %> - Tienda Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        .contenedor-foto-principal {
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            border: 1px solid #eaeaea;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .img-principal {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+        .miniatura-foto {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            border: 2px solid #eaeaea;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 5px;
+            background-color: #fff;
+            transition: border-color 0.2s;
+        }
+        .miniatura-foto:hover, .miniatura-foto.activa {
+            border-color: #0d6efd;
+        }
+        .lateral-compra {
+            border-radius: 12px;
+            border: 1px solid #secondary-subtle;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/tienda">🛒 Tienda Online</a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <form class="d-flex mx-auto col-lg-6 my-2 my-lg-0">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Buscar productos, marcas y más..." aria-label="Buscar">
+                        <button class="btn btn-primary" type="button"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                </form>
+
+                <div class="navbar-nav align-items-center gap-3">
+                    <button class="btn btn-outline-secondary border-0" id="btnModoOscuroTienda" title="Cambiar Tema">
+                        <i class="fa-solid fa-moon fs-5"></i>
+                    </button>
+
+                    <button class="btn btn-outline-primary position-relative border-0" data-bs-toggle="offcanvas" data-bs-target="#carritoPublicoOffcanvas">
+                        <i class="fa-solid fa-cart-shopping fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="contadorCarritoPublico">
+                            0
+                        </span>
+                    </button>
+
+                    <hr class="d-lg-none my-2 w-100 text-secondary">
+
+                    <% if (typeof cliente !== 'undefined' && cliente) { %>
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle fw-bold text-body" href="#" role="button" data-bs-toggle="dropdown">
+                                👤 ¡Hola, <%= cliente.nombre %>!
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/tienda/mis-compras">📦 Mis Pedidos</a></li>
+                                <li><a class="dropdown-item" href="/tienda/mi-perfil">⚙️ Mi Perfil</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="/tienda/logout">🚪 Salir</a></li>
+                            </ul>
+                        </div>
+                    <% } else { %>
+                        <div class="d-flex gap-2">
+                            <a href="/tienda/login" class="btn btn-outline-secondary btn-sm fw-bold">Ingresar</a>
+                            <a href="/tienda/registro" class="btn btn-primary btn-sm fw-bold">Crear Cuenta</a>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <div class="row g-4">
+            
+            <div class="col-lg-8">
+                <div class="card border-0 bg-transparent">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="contenedor-foto-principal shadow-sm">
+                                <% if (producto.imagen) { %>
+                                    <img src="<%= producto.imagen %>" id="fotoVisorPrincipal" class="img-principal" alt="<%= producto.nombre %>">
+                                <% } else { %>
+                                    <img src="/assets/images/productos/default.png" id="fotoVisorPrincipal" class="img-principal" alt="Sin imagen">
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 d-flex gap-2 flex-wrap justify-content-center">
+                            <% if (producto.imagen) { %>
+                                <img src="<%= producto.imagen %>" class="miniatura-foto activa" onclick="cambiarFoto(this.src)">
+                            <% } %>
+                            
+                            <% if (galeria && galeria.length > 0) { %>
+                                <% galeria.forEach(img => { %>
+                                    <img src="<%= img.ruta_imagen %>" class="miniatura-foto" onclick="cambiarFoto(this.src)">
+                                <% }) %>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 p-4 bg-body-tertiary rounded-3 shadow-sm border border-secondary-subtle">
+                    <h4 class="fw-bold mb-3 text-body">Descripción</h4>
+                    <p class="text-body-secondary lh-lg mb-4" style="white-space: pre-line;">
+                        <%= producto.descripcion || 'El vendedor no proporcionó una descripción para este artículo.' %>
+                    </p>
+
+                    <% if (producto.especificaciones) { %>
+                        <hr class="text-secondary my-4">
+                        <h5 class="fw-bold mb-3 text-body"><i class="fa-solid fa-list-check me-2 text-primary"></i>Especificaciones técnicas</h5>
+                        <p class="text-body-secondary lh-lg small" style="white-space: pre-line;">
+                            <%= producto.especificaciones %>
+                        </p>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card p-4 bg-body-tertiary shadow-sm lateral-compra border border-secondary-subtle">
+                    <span class="text-muted small d-block mb-1">Nuevo | +100 vendidos</span>
+                    <h3 class="fw-bold text-body mb-2"><%= producto.nombre %></h3>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-secondary me-1"><%= producto.marca_nombre %></span>
+                        <span class="badge bg-light text-dark border"><%= producto.categoria_nombre %></span>
+                    </div>
+
+                    <hr class="text-secondary my-3">
+
+                    <div class="mb-4">
+                        <% if (Number(producto.porcentaje_descuento) > 0) { %>
+                            <span class="text-muted text-decoration-line-through d-block fs-5">
+                                $<%= Number(producto.precio_venta).toLocaleString('es-AR') %>
+                            </span>
+                            <% const precioFinal = producto.precio_venta * (1 - (producto.porcentaje_descuento / 100)); %>
+                            <div class="d-flex align-items-center gap-2">
+                                <h1 class="fw-bold text-success m-0">
+                                    $<%= Math.round(precioFinal).toLocaleString('es-AR') %>
+                                </h1>
+                                <span class="text-success fw-bold fs-5"><%= Math.round(producto.porcentaje_descuento) %>% OFF</span>
+                            </div>
+                            <small class="text-success d-block fw-bold mt-1"><i class="fa-solid fa-credit-card me-1"></i> Mismo precio en 3 cuotas</small>
+                        <% } else { %>
+                            <h1 class="fw-bold text-body m-0">
+                                $<%= Number(producto.precio_venta).toLocaleString('es-AR') %>
+                            </h1>
+                        <% } %>
+                    </div>
+
+                    <div class="mb-4">
+                        <% if (producto.stock_actual > 0) { %>
+                            <p class="text-success fw-bold m-0"><i class="fa-solid fa-check me-1"></i> ¡Stock disponible!</p>
+                            <small class="text-muted">Unidades en depósito: <strong><%= producto.stock_actual %></strong></small>
+                        <% } else { %>
+                            <p class="text-danger fw-bold m-0"><i class="fa-solid fa-circle-xmark me-1"></i> Agotado temporalmente</p>
+                            <small class="text-muted">Dejanos tu mail y te avisamos cuando reingrese.</small>
+                        <% } %>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <% if (producto.stock_actual > 0) { %>
+                            <button class="btn btn-primary fw-bold py-2.5 fs-5 shadow-sm" onclick="agregarAlCarritoPublico(<%= producto.id %>)">
+                                <i class="fa-solid fa-cart-plus me-2"></i>Agregar al carrito
+                            </button>
+                        <% } else { %>
+                            <button class="btn btn-secondary fw-bold py-2.5 disabled" disabled>
+                                No disponible
+                            </button>
+                        <% } %>
+                    </div>
+
+                    <div class="mt-4 border-top border-secondary-subtle pt-3">
+                        <p class="text-muted mb-2" style="font-size: 0.8rem;"><i class="fa-solid fa-shield-halved text-primary me-2"></i> <strong>Compra Protegida:</strong> Recibí el producto que esperabas o te devolvemos tu dinero.</p>
+                        <p class="text-muted mb-0" style="font-size: 0.8rem;"><i class="fa-solid fa-award text-primary me-2"></i> <strong>Garantía de fábrica:</strong> 12 meses de cobertura oficial.</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end shadow-lg" tabindex="-1" id="carritoPublicoOffcanvas">
+        <div class="offcanvas-header bg-primary text-white">
+            <h5 class="offcanvas-title fw-bold"><i class="fa-solid fa-cart-shopping me-2"></i>Mi Carrito</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column bg-body-tertiary p-0">
+            <div id="listaCarritoPublico" class="flex-grow-1 overflow-auto p-3">
+                <div class="text-center text-muted py-5">
+                    <i class="fa-solid fa-cart-arrow-down fa-3x mb-3 text-secondary"></i>
+                    <h6>Tu carrito está vacío</h6>
+                </div>
+            </div>
+            <div class="bg-body p-3 border-top shadow-sm">
+                <div class="d-flex justify-content-between mb-3">
+                    <h5 class="fw-bold m-0 text-body">Total a pagar:</h5>
+                    <h5 class="fw-bold text-success m-0" id="totalCarritoPublico">$0.00</h5>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary btn-lg fw-bold" onclick="iniciarCheckout()">
+                        Iniciar Compra <i class="fa-solid fa-arrow-right ms-2"></i>
+                    </button>
+                    <button class="btn btn-outline-danger fw-bold" onclick="vaciarCarritoPublico()">
+                        Vaciar Carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Sincronizar el modo oscuro con el del home
+        const temaGuardado = localStorage.getItem('temaTienda');
+        if (temaGuardado === 'dark') {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        }
+
+        // Función interactiva para cambiar la foto del visor al tocar o pasar por las miniaturas
+        function cambiarFoto(rutaSrc) {
+            document.getElementById('fotoVisorPrincipal').src = rutaSrc;
+            
+            // Cambiar la clase activa visual en las miniaturas
+            document.querySelectorAll('.miniatura-foto').forEach(img => img.classList.remove('activa'));
+            event.target.classList.add('activa');
+        }
+    </script>
+    <script src="/assets/js/carrito_publico.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+.product-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            /* Importante para la etiqueta OFF */
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .img-container {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            padding: 15px;
+        }
+
+        .img-container img {
+            max-height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .categoria-item.active {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        /* ESTILO MERCADO LIBRE PARA EL DESCUENTO */
+        .badge-descuento {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 0.85rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+            /* Cuadradito como ML */
+            font-weight: 800;
+            background-color: #00a650;
+            /* Verde Mercado Libre */
+            color: white;
+            z-index: 2;
+        }

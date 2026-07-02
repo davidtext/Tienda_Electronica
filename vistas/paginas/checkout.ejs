@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Compra - Checkout Seguro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+
+<body class="bg-dark text-light py-4">
+
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+            <h3 class="fw-bold text-primary m-0">🔒 Checkout Seguro</h3>
+            <a href="/tienda" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-chevron-left me-1"></i>
+                Cancelar y volver</a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+
+                <div class="card bg-secondary border-0 p-4 shadow-sm mb-4" style="border-radius: 12px;">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-truck text-primary me-2"></i>1. ¿Cómo querés recibir
+                        tu compra?</h5>
+
+                    <div class="form-check p-3 bg-body rounded border mb-2 cursor-pointer"
+                        onclick="seleccionarEntrega('retiro')">
+                        <input class="form-check-input ms-1" type="radio" name="radioEntrega" id="radioRetiro"
+                            value="retiro" checked>
+                        <label class="form-check-label text-body fw-bold ms-2" for="radioRetiro">
+                            🏪 Retiro en sucursal (Gratis)
+                            <small class="text-muted d-block fw-normal">Av. Siempreviva 123 - Listo en 1 hora.</small>
+                        </label>
+                    </div>
+
+                    <div class="form-check p-3 bg-body rounded border cursor-pointer"
+                        onclick="seleccionarEntrega('envio')">
+                        <input class="form-check-input ms-1" type="radio" name="radioEntrega" id="radioEnvio"
+                            value="envio">
+                        <label class="form-check-label text-body fw-bold ms-2" for="radioEnvio">
+                            🚚 Envío a domicilio
+                            <small class="text-muted d-block fw-normal">Llega a tu casa por correo Andreani/Oca.</small>
+                        </label>
+                    </div>
+
+                    <div id="panelDirecciones" class="mt-3 d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold m-0 text-white-50">Mis direcciones:</h6>
+                            <button class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal"
+                                data-bs-target="#modalNuevaDireccion">
+                                <i class="fa-solid fa-plus me-1"></i> Nueva dirección
+                            </button>
+                        </div>
+
+                        <div id="contenedorListaDirecciones" class="d-flex flex-column gap-2">
+                            <% if (direcciones && direcciones.length> 0) { %>
+                                <% direcciones.forEach((dir, i)=> { %>
+                                    <div class="p-2 bg-body text-body rounded border d-flex align-items-center">
+                                        <input class="form-check-input mx-2" type="radio" name="id_direccion"
+                                            value="<%= dir.id %>" <%=i===0 ? 'checked' : '' %>>
+                                        <span class="small fw-semibold"><strong>[<%= dir.alias %>]</strong>
+                                            <%= dir.calle %>
+                                                <%= dir.numero %>, <%= dir.ciudad %> (<%= dir.provincia %>)
+                                        </span>
+                                    </div>
+                                    <% }) %>
+                                        <% } else { %>
+                                            <div class="alert alert-warning small m-0 fw-bold py-2 text-center">No tenés
+                                                direcciones cargadas aún. Crea una arriba.</div>
+                                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-secondary border-0 p-4 shadow-sm" style="border-radius: 12px;">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-credit-card text-primary me-2"></i>2. Medio de Pago
+                    </h5>
+                    <select class="form-select bg-dark text-light border-0 py-2.5" id="metodoPagoSelect">
+                        <option value="mercadopago">💳 Tarjeta de Crédito / Débito (Mercado Pago)</option>
+                        <option value="rapipago">💵 Rapipago / PagoFácil (Mercado Pago)</option>
+                        <option value="transferencia">📱 Transferencia Bancaria Directa (Alias/CBU)</option>
+                        <option value="efectivo_local">🏪 Pago en Efectivo (Al retirar en el local)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card bg-secondary border-0 p-4 shadow-sm position-sticky"
+                    style="border-radius: 12px; top: 90px;">
+                    <h5 class="fw-bold mb-3 text-white border-bottom border-dark pb-2">Resumen de tu compra</h5>
+
+                    <div class="overflow-auto mb-3" style="max-height: 200px;">
+                        <% carrito.forEach(item=> { %>
+                            <div class="d-flex align-items-center justify-content-between bg-dark p-2 rounded mb-2">
+                                <div class="d-flex align-items-center">
+                                    <img src="<%= item.imagen %>"
+                                        style="width: 40px; height: 40px; object-fit: contain;"
+                                        class="rounded bg-white me-2">
+                                    <div>
+                                        <span class="small fw-semibold d-block text-truncate" style="max-width: 180px;">
+                                            <%= item.nombre %>
+                                        </span>
+                                        <small class="text-muted">
+                                            <%= item.cantidad %> un. x $<%=
+                                                    Math.round(item.precio).toLocaleString('es-AR') %>
+                                        </small>
+                                    </div>
+                                </div>
+                                <span class="fw-bold text-success small">$<%= Math.round(item.precio *
+                                        item.cantidad).toLocaleString('es-AR') %></span>
+                            </div>
+                            <% }) %>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-1 small text-white-50">
+                        <span>Productos:</span>
+                        <span>$<%= Math.round(total).toLocaleString('es-AR') %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 small text-white-50">
+                        <span>Costo de envío:</span>
+                        <span id="textoCostoEnvio" class="text-success fw-bold">Gratis</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-top border-dark pt-3 mb-4">
+                        <h4 class="fw-bold m-0">Total a pagar:</h4>
+                        <h4 class="fw-bold text-success m-0">$<%= Math.round(total).toLocaleString('es-AR') %>
+                        </h4>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg w-100 fw-bold py-3 fs-5 shadow"
+                        onclick="confirmarCompraWeb()">
+                        <i class="fa-solid fa-shield-halved me-2"></i> Confirmar y pagar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade text-dark" id="modalNuevaDireccion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white py-2">
+                    <h6 class="modal-title fw-bold"><i class="fa-solid fa-map-location-dot me-2"></i>Nueva Dirección de
+                        Envío</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <form id="formNuevaDireccion">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Nombre de la ubicación (Alias)</label>
+                            <input type="text" class="form-control form-control-sm" name="alias"
+                                placeholder="Ej: Mi Casa, Trabajo" required>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-8">
+                                <label class="form-label small fw-bold mb-1">Calle</label>
+                                <input type="text" class="form-control form-control-sm" name="calle" required>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-bold mb-1">Número</label>
+                                <input type="text" class="form-control form-control-sm" name="numero" required>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Piso / Depto (Opcional)</label>
+                            <input type="text" class="form-control form-control-sm" name="piso_depto">
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold mb-1">Ciudad</label>
+                                <input type="text" class="form-control form-control-sm" name="ciudad" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold mb-1">Provincia</label>
+                                <input type="text" class="form-control form-control-sm" name="provincia" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold mb-1">Código Postal</label>
+                            <input type="text" class="form-control form-control-sm" name="codigo_postal" required>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm w-100 fw-bold"
+                            onclick="guardarDireccionCheckout()">Guardar Ubicación</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let metodoEntregaActual = 'retiro';
+
+        function seleccionarEntrega(tipo) {
+            metodoEntregaActual = tipo;
+            const panel = document.getElementById('panelDirecciones');
+            if (tipo === 'envio') {
+                panel.classList.remove('d-none');
+                document.getElementById('radioEnvio').checked = true;
+            } else {
+                panel.classList.add('d-none');
+                document.getElementById('radioRetiro').checked = true;
+            }
+        }
+
+        function guardarDireccionCheckout() {
+            const form = document.getElementById('formNuevaDireccion');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            fetch('/api/tienda/direccion/nueva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        // Cerrar modal
+                        bootstrap.Modal.getInstance(document.getElementById('modalNuevaDireccion')).hide();
+                        form.reset();
+
+                        // Repoblar lista visual de direcciones
+                        let html = '';
+                        res.direcciones.forEach((dir, i) => {
+                            html += `
+                            <div class="p-2 bg-body text-body rounded border d-flex align-items-center">
+                                <input class="form-check-input mx-2" type="radio" name="id_direccion" value="${dir.id}" ${i === 0 ? 'checked' : ''}>
+                                <span class="small fw-semibold"><strong>[${dir.alias}]</strong> ${dir.calle} ${dir.numero}, ${dir.ciudad} (${dir.provincia})</span>
+                            </div>`;
+                        });
+                        document.getElementById('contenedorListaDirecciones').innerHTML = html;
+                        Swal.fire('¡Éxito!', res.message, 'success');
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                });
+        }
+
+        function confirmarCompraWeb() {
+            const selectPago = document.getElementById('metodoPagoSelect').value;
+            let id_direccion = null;
+
+            // 1. Validamos la dirección si es envío
+            if (metodoEntregaActual === 'envio') {
+                const checkedRadio = document.querySelector('input[name="id_direccion"]:checked');
+                if (!checkedRadio) {
+                    return Swal.fire('Atención', 'Por favor, selecciona o agrega una dirección de envío.', 'warning');
+                }
+                id_direccion = checkedRadio.value;
+            }
+
+            // 2. BLOQUEO LÓGICO: Envío a domicilio + Efectivo en el local
+            if (metodoEntregaActual === 'envio' && selectPago === 'efectivo_local') {
+                return Swal.fire(
+                    'Atención',
+                    'No puedes pedir envío a domicilio y pagar en el local. Por favor, selecciona Transferencia/Mercado Pago, o cambia tu entrega a "Retiro en sucursal".',
+                    'warning'
+                );
+            }
+
+            // 3. Formateamos el método para el Backend
+            let metodoPagoFormateado = 'mercadopago'; // Por defecto (Cubre Tarjetas y Rapipago)
+            if (selectPago === 'transferencia') metodoPagoFormateado = 'transferencia';
+            if (selectPago === 'efectivo_local') metodoPagoFormateado = 'efectivo';
+
+            let mensajeConfirmacion = "Se registrará tu orden de compra en el sistema.";
+            if (metodoPagoFormateado === 'mercadopago') {
+                mensajeConfirmacion = "Serás redirigido a Mercado Pago para generar tu código o abonar de forma segura.";
+            }
+
+            Swal.fire({
+                title: '¿Confirmar pedido?',
+                text: mensajeConfirmacion,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0d6efd',
+                confirmButtonText: 'Sí, confirmar compra',
+                cancelButtonText: 'Revisar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+                    fetch('/api/tienda/checkout/procesar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            metodo_entrega: metodoEntregaActual,
+                            id_direccion: id_direccion,
+                            metodo_pago: metodoPagoFormateado
+                        })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                window.location.href = data.url_pago;
+                            } else if (data.status === 'success_manual') {
+                                window.location.href = data.url_redireccion;
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        });
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

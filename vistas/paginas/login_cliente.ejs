@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresar - Tienda Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-dark text-light d-flex justify-content-center align-items-center vh-100">
+
+    <div class="card bg-secondary p-4 shadow-lg border-0" style="width: 25rem; border-radius: 12px;">
+        <div class="text-center mb-4">
+            <a href="/tienda" class="text-decoration-none text-light">
+                <i class="fa-solid fa-store fs-1 text-primary mb-2"></i>
+                <h4 class="fw-bold m-0">Tienda Online</h4>
+            </a>
+            <p class="text-light opacity-75 small mt-1">Ingresá a tu cuenta para comprar</p>
+        </div>
+        
+        <form id="formLoginCliente" onsubmit="loginCliente(event)">
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Correo Electrónico</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="ejemplo@correo.com" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="********" required>
+            </div>
+            
+            <div class="text-center mb-4 mt-3">
+                <a href="/tienda/recuperar-cuenta" class="text-white small text-decoration-none fw-bold opacity-75 hover-opacity-100" style="transition: opacity 0.2s;">
+                    ¿Olvidaste tu contraseña o correo?
+                </a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 fw-bold fs-5 shadow-sm mb-3">
+                Ingresar
+            </button>
+
+            <div class="text-center border-top border-secondary pt-3 mt-2">
+                <span class="text-light opacity-75 small">¿Sos nuevo?</span><br>
+                <a href="/tienda/registro" class="btn btn-outline-light btn-sm fw-bold w-100 mt-2">
+                    Crear Cuenta
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function loginCliente(event) {
+            event.preventDefault();
+            const form = document.getElementById('formLoginCliente');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            fetch('/api/tienda/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(respuesta => {
+                if (respuesta.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Bienvenido!',
+                        text: respuesta.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = '/tienda';
+                    });
+                } 
+                else if (respuesta.status === 'error_verificacion') {
+                    Swal.fire('Cuenta pendiente', respuesta.message, 'warning').then(() => {
+                        window.location.href = '/tienda/verificar';
+                    });
+                } 
+                else {
+                    Swal.fire('Acceso Denegado', respuesta.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+            });
+        }
+    </script>
+</body>
+</html>

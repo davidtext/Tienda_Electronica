@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría del Sistema</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Librería SheetJS para exportar a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <%- include('../componentes/navbar') %>
+
+        <div class="container-fluid px-4 py-4">
+
+            <!-- Encabezado y Buscador -->
+            <div class="row mb-4 align-items-center">
+                <div class="col-md-4">
+                    <h2 class="fw-bold m-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Auditoría
+                    </h2>
+                    <p class="text-muted m-0">Historial de movimientos del sistema (<%= totalRegistros %> registros)</p>
+                </div>
+
+                <div class="col-md-8 d-flex justify-content-end gap-2 mt-3 mt-md-0">
+                    <form action="/auditoria" method="GET" class="d-flex w-50">
+                        <div class="input-group">
+                            <span class="input-group-text bg-body-tertiary"><i
+                                    class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" class="form-control" name="busqueda"
+                                placeholder="Buscar empleado, acción o tabla..." value="<%= busqueda %>">
+                            <% if (busqueda) { %>
+                                <a href="/auditoria" class="btn btn-outline-danger"><i
+                                        class="fa-solid fa-times"></i></a>
+                                <% } %>
+                                    <button class="btn btn-primary" type="submit">Buscar</button>
+                        </div>
+                    </form>
+                    <button class="btn btn-success fw-bold" onclick="exportarExcel()">
+                        <i class="fa-solid fa-file-excel me-2"></i>Exportar Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Datos -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <!-- Agregamos un ID a la tabla para el Excel -->
+                        <table class="table table-hover align-middle mb-0" id="tablaAuditoria">
+                            <thead class="table-group-divider">
+                                <tr>
+                                    <th class="px-3">Fecha y Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Módulo (Tabla)</th>
+                                    <th>Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (logs.length> 0) { %>
+                                    <% logs.forEach(log=> { %>
+                                        <tr>
+                                            <td class="px-3 text-nowrap">
+                                                <%= new Date(log.fecha_hora).toLocaleString('es-AR') %>
+                                            </td>
+                                            <td class="fw-bold">
+                                                <%= log.nombre %>
+                                                    <%= log.apellido %>
+                                            </td>
+                                            <td>
+                                                <% if (log.accion==='INSERT' ) { %>
+                                                    <span class="badge bg-success">CREAR</span>
+                                                    <% } else if (log.accion==='UPDATE' ) { %>
+                                                        <span class="badge bg-warning text-dark">EDITAR</span>
+                                                        <% } else if (log.accion==='DELETE' ) { %>
+                                                            <span class="badge bg-danger">BORRAR</span>
+                                                            <% } else if (log.accion==='ANULAR' ) { %>
+                                                                <!-- Etiqueta negra para anulaciones -->
+                                                                <span
+                                                                    class="badge bg-dark border border-light">ANULAR</span>
+                                                                <% } else if (log.accion==='REINICIAR' ) { %>
+                                                                    <!-- Etiqueta azul claro para reinicios -->
+                                                                    <span
+                                                                        class="badge bg-info text-dark">REINICIAR</span>
+                                                                    <% } else { %>
+                                                                        <span class="badge bg-secondary">
+                                                                            <%= log.accion %>
+                                                                        </span>
+                                                                        <% } %>
+                                            </td>
+                                            <td class="text-uppercase text-muted small fw-bold">
+                                                <%= log.tabla_afectada %>
+                                            </td>
+                                            <td>
+                                                <%= log.detalle %>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-5 text-muted">
+                                                        <i
+                                                            class="fa-solid fa-folder-open fa-3x mb-3 text-light-emphasis d-block"></i>
+                                                        No se encontraron registros de auditoría.
+                                                    </td>
+                                                </tr>
+                                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            <% if (totalPaginas> 1) { %>
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+
+                        <li class="page-item <%= paginaActual === 1 ? 'disabled' : '' %>">
+                            <a class="page-link"
+                                href="/auditoria?pagina=<%= paginaActual - 1 %>&busqueda=<%= busqueda %>">Anterior</a>
+                        </li>
+
+                        <% for (let i=1; i <=totalPaginas; i++) { %>
+                            <li class="page-item <%= paginaActual === i ? 'active' : '' %>">
+                                <a class="page-link" href="/auditoria?pagina=<%= i %>&busqueda=<%= busqueda %>">
+                                    <%= i %>
+                                </a>
+                            </li>
+                            <% } %>
+
+                                <li class="page-item <%= paginaActual === totalPaginas ? 'disabled' : '' %>">
+                                    <a class="page-link"
+                                        href="/auditoria?pagina=<%= paginaActual + 1 %>&busqueda=<%= busqueda %>">Siguiente</a>
+                                </li>
+
+                    </ul>
+                </nav>
+                <% } %>
+
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Lógica de Exportación a Excel -->
+        <script>
+            function exportarExcel() {
+                // Buscamos la tabla en el HTML
+                let table = document.getElementById("tablaAuditoria");
+                // Convertimos la tabla HTML a una hoja de cálculo
+                let workbook = XLSX.utils.table_to_book(table, { sheet: "Auditoría" });
+                // Descargamos el archivo con la fecha de hoy
+                let fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+                XLSX.writeFile(workbook, `Reporte_Auditoria_${fecha}.xlsx`);
+            }
+        </script>
+</body>
+
+</html>

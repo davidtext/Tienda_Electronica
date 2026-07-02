@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Tienda Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-body-tertiary">
+
+    <nav class="navbar navbar-expand-lg bg-body shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/tienda">🛒 Tienda Online</a>
+            <div class="navbar-nav ms-auto align-items-center gap-3">
+                <a href="/tienda/mis-compras" class="btn btn-sm btn-outline-primary fw-bold"><i class="fa-solid fa-box-open me-1"></i> Mis compras</a>
+                <a href="/tienda" class="btn btn-sm btn-outline-secondary fw-bold"><i class="fa-solid fa-arrow-left me-1"></i> Volver al catálogo</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <h3 class="fw-bold text-body mb-4"><i class="fa-solid fa-user-gear text-primary me-2"></i>Mi Perfil</h3>
+
+        <div class="row g-4">
+            
+            <div class="col-lg-5 d-flex flex-column gap-4">
+                
+                <div class="card border-secondary-subtle shadow-sm">
+                    <div class="card-header bg-body border-bottom fw-bold py-3"><i class="fa-solid fa-address-card text-muted me-2"></i> Mis Datos</div>
+                    <div class="card-body bg-body-tertiary">
+                        <form id="formPerfil" onsubmit="actualizarPerfil(event)">
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-muted mb-1">Nombre</label>
+                                    <input type="text" class="form-control form-control-sm fw-semibold" name="nombre" value="<%= cliente.nombre %>" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-muted mb-1">Apellido</label>
+                                    <input type="text" class="form-control form-control-sm fw-semibold" name="apellido" value="<%= cliente.apellido %>" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted mb-1">Teléfono / WhatsApp</label>
+                                <input type="text" class="form-control form-control-sm" name="telefono" value="<%= cliente.telefono || '' %>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted mb-1">Correo de Respaldo / Alternativo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-envelope-shield"></i></span>
+                                    <input type="email" class="form-control form-control-sm" name="email_alternativo" value="<%= cliente.email_alternativo || '' %>" placeholder="ejemplo@correo.com">
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Se usará para recuperar tu cuenta si pierdes acceso al principal.</div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-muted mb-1">DNI / CUIL</label>
+                                    <input type="text" class="form-control form-control-sm bg-body-secondary" value="<%= cliente.dni_cuil %>" disabled>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold text-muted mb-1">Correo Principal</label>
+                                    <input type="text" class="form-control form-control-sm bg-body-secondary" value="<%= cliente.email %>" disabled>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold"><i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card border-secondary-subtle shadow-sm">
+                    <div class="card-header bg-body border-bottom fw-bold py-3"><i class="fa-solid fa-lock text-muted me-2"></i> Seguridad</div>
+                    <div class="card-body bg-body-tertiary">
+                        <form id="formPassword" onsubmit="cambiarPassword(event)">
+                            <div class="mb-2">
+                                <input type="password" class="form-control form-control-sm" name="password_actual" placeholder="Contraseña Actual" required>
+                            </div>
+                            <div class="mb-2">
+                                <input type="password" class="form-control form-control-sm" name="password_nueva" placeholder="Nueva Contraseña" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="password" class="form-control form-control-sm" name="password_conf" placeholder="Confirmar Nueva Contraseña" required>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100 fw-bold"><i class="fa-solid fa-key me-1"></i> Actualizar Clave</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7 d-flex flex-column gap-4">
+                
+                <div class="card border-secondary-subtle shadow-sm">
+                    <div class="card-header bg-body border-bottom fw-bold py-3">
+                        <i class="fa-solid fa-house-chimney text-muted me-2"></i> Mis Direcciones Guardadas
+                    </div>
+                    <div class="card-body bg-body-tertiary p-3">
+                        <div id="contenedorListaDirecciones" class="d-flex flex-column gap-2">
+                            <% if (direcciones && direcciones.length > 0) { %>
+                                <% direcciones.forEach(dir => { %>
+                                    <div class="p-2 bg-body text-body rounded border d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="small fw-semibold d-block text-primary"><i class="fa-solid fa-tag me-1"></i><%= dir.alias %></span>
+                                            <span class="small text-muted"><%= dir.calle %> <%= dir.numero %><%- dir.piso_depto ? ` (Depto: ${dir.piso_depto})` : '' %>, <%= dir.ciudad %></span>
+                                        </div>
+                                        <span class="badge bg-secondary">CP: <%= dir.codigo_postal %></span>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="alert alert-warning small m-0 fw-bold py-2 text-center" id="mensajeSinDirecciones">Aún no tienes direcciones guardadas.</div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-secondary-subtle shadow-sm h-100">
+                    <div class="card-header bg-body border-bottom fw-bold py-3 d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-map-location-dot text-muted me-2"></i> Agregar Nueva Dirección</span>
+                    </div>
+                    <div class="card-body bg-body-tertiary d-flex flex-column">
+                        
+                        <div class="alert alert-info small py-2 mb-3">
+                            <i class="fa-solid fa-circle-info me-1"></i> <strong>Busca en el mapa</strong> o arrastra el PIN rojo hacia tu casa para rellenar los datos.
+                        </div>
+
+                        <div id="mapaDireccion" class="rounded border shadow-sm mb-3" style="height: 250px; width: 100%; z-index: 1;"></div>
+
+                        <form id="formNuevaDireccionMapa" class="mt-auto">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted mb-1">Nombre (Alias)</label>
+                                    <input type="text" class="form-control form-control-sm" name="alias" placeholder="Ej: Trabajo" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold text-muted mb-1">Calle</label>
+                                    <input type="text" class="form-control form-control-sm" id="mapCalle" name="calle" required readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted mb-1">Número</label>
+                                    <input type="text" class="form-control form-control-sm" id="mapNumero" name="numero" placeholder="Ej: 1234" required>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted mb-1">Piso / Depto</label>
+                                    <input type="text" class="form-control form-control-sm" name="piso_depto" placeholder="Opcional">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted mb-1">Ciudad</label>
+                                    <input type="text" class="form-control form-control-sm" id="mapCiudad" name="ciudad" value="Formosa" required readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted mb-1">Cod. Postal</label>
+                                    <input type="text" class="form-control form-control-sm" id="mapCP" name="codigo_postal" value="3600" required>
+                                </div>
+                                <input type="hidden" name="provincia" value="Formosa">
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm w-100 fw-bold" onclick="guardarDireccionMapa()"><i class="fa-solid fa-plus me-1"></i> Guardar Dirección</button>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const temaGuardado = localStorage.getItem('temaTienda');
+        if (temaGuardado === 'dark') document.documentElement.setAttribute('data-bs-theme', 'dark');
+
+        // ==========================================
+        // LÓGICA DEL MAPA (LEAFLET + NOMINATIM)
+        // ==========================================
+        const latInicial = -26.18489;
+        const lngInicial = -58.17313;
+        const map = L.map('mapaDireccion').setView([latInicial, lngInicial], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        const marker = L.marker([latInicial, lngInicial], { draggable: true }).addTo(map);
+
+        function actualizarDatosDesdeCoordenadas(lat, lng) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+                .then(res => res.json())
+                .then(data => {
+                    const dir = data.address;
+                    if(dir) {
+                        document.getElementById('mapCalle').value = dir.road || dir.pedestrian || 'Calle Desconocida';
+                        if(dir.house_number) document.getElementById('mapNumero').value = dir.house_number;
+                        if(dir.postcode) document.getElementById('mapCP').value = dir.postcode;
+                    }
+                })
+                .catch(err => console.log('Error leyendo el mapa', err));
+        }
+
+        marker.on('dragend', function (e) {
+            const posicion = marker.getLatLng();
+            actualizarDatosDesdeCoordenadas(posicion.lat, posicion.lng);
+        });
+
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            actualizarDatosDesdeCoordenadas(e.latlng.lat, e.latlng.lng);
+        });
+
+        // ==========================================
+        // LÓGICA DE FORMULARIOS (AJAX)
+        // ==========================================
+
+        function actualizarPerfil(e) {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            fetch('/api/tienda/mi-perfil/actualizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+            .then(res => res.json()).then(res => {
+                if (res.status === 'success') Swal.fire({ title: '¡Actualizado!', text: res.message, icon: 'success', timer: 2000, showConfirmButton: false });
+                else Swal.fire('Error', res.message, 'error');
+            });
+        }
+
+        function cambiarPassword(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = Object.fromEntries(new FormData(form));
+            fetch('/api/tienda/mi-perfil/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+            .then(res => res.json()).then(res => {
+                if (res.status === 'success') { Swal.fire('¡Contraseña Cambiada!', res.message, 'success'); form.reset(); }
+                else Swal.fire('Error', res.message, 'error');
+            });
+        }
+
+        function guardarDireccionMapa() {
+            const form = document.getElementById('formNuevaDireccionMapa');
+            if(!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            const data = Object.fromEntries(new FormData(form));
+            
+            fetch('/api/tienda/direccion/nueva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    Swal.fire({ title: '¡Dirección Guardada!', text: 'Ya puedes usarla en tu próxima compra.', icon: 'success', timer: 1500, showConfirmButton: false })
+                    .then(() => {
+                        window.location.reload(); // Recargamos para que aparezca en la lista superior
+                    });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+
+<body>
+
+    <%- include('../componentes/navbar') %>
+
+        <div class="container mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold"><i class="fa-solid fa-users me-2"></i>Mis Clientes</h3>
+                <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">
+                    <i class="fa-solid fa-user-plus me-1"></i> Nuevo Cliente
+                </button>
+            </div>
+
+            <form action="/clientes" method="GET"
+                class="mb-4 bg-body-tertiary p-3 rounded shadow-sm border d-flex gap-2">
+                <input type="text" name="busqueda" class="form-control"
+                    placeholder="Buscar por Nombre, Apellido o DNI/CUIL..."
+                    value="<%= typeof busquedaActual !== 'undefined' ? busquedaActual : '' %>">
+                <button type="submit" class="btn btn-primary fw-bold px-4"><i class="fa-solid fa-search"></i></button>
+                <% if (typeof busquedaActual !=='undefined' && busquedaActual) { %>
+                    <a href="/clientes" class="btn btn-outline-danger" title="Limpiar"><i
+                            class="fa-solid fa-eraser"></i></a>
+                    <% } %>
+            </form>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="ps-3">ID</th>
+                                    <th>DNI / CUIL</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th class="text-end pe-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (clientes.length> 0) { %>
+                                    <% clientes.forEach(c=> { %>
+                                        <tr>
+                                            <td class="ps-3 fw-bold text-muted">#<%= c.id %>
+                                            </td>
+                                            <td class="fw-bold">
+                                                <%= c.dni_cuil || '---' %>
+                                            </td>
+                                            <td class="fw-bold">
+                                                <%= c.apellido %>, <%= c.nombre %>
+                                            </td>
+                                            <td>
+                                                <%= c.telefono || '---' %>
+                                            </td>
+                                            <td>
+                                                <%= c.email || '---' %>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <% if (c.id !==1) { %>
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                        onclick="abrirEditar(<%= c.id %>, '<%= c.nombre %>', '<%= c.apellido %>', '<%= c.dni_cuil %>', '<%= c.telefono %>', '<%= c.email %>')"
+                                                        title="Editar">
+                                                        <i class="fa-solid fa-pen"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger ms-1"
+                                                        onclick="borrarCliente(<%= c.id %>, '<%= c.nombre %> <%= c.apellido %>')"
+                                                        title="Eliminar">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                    <% } else { %>
+                                                        <span class="badge bg-secondary">Sistema</span>
+                                                        <% } %>
+                                            </td>
+                                        </tr>
+                                        <% }) %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-4 text-muted">No se
+                                                        encontraron clientes.</td>
+                                                </tr>
+                                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <% if (typeof totalPaginas !=='undefined' && totalPaginas> 1) { %>
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center shadow-sm">
+                        <li class="page-item <%= paginaActual === 1 ? 'disabled' : '' %>">
+                            <a class="page-link" href="<%= urlBase %>pagina=<%= paginaActual - 1 %>">Anterior</a>
+                        </li>
+                        <% for (let i=1; i <=totalPaginas; i++) { %>
+                            <li class="page-item <%= paginaActual === i ? 'active' : '' %>">
+                                <a class="page-link fw-bold" href="<%= urlBase %>pagina=<%= i %>">
+                                    <%= i %>
+                                </a>
+                            </li>
+                            <% } %>
+                                <li class="page-item <%= paginaActual === totalPaginas ? 'disabled' : '' %>">
+                                    <a class="page-link"
+                                        href="<%= urlBase %>pagina=<%= paginaActual + 1 %>">Siguiente</a>
+                                </li>
+                    </ul>
+                </nav>
+                <% } %>
+        </div>
+
+        <div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i>Registrar Cliente</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formNuevoCliente" novalidate>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Nombre *</label>
+                                    <input type="text" class="form-control" id="cli_nombre">
+                                    <div class="invalid-feedback">Falta el nombre.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Apellido *</label>
+                                    <input type="text" class="form-control" id="cli_apellido">
+                                    <div class="invalid-feedback">Falta el apellido.</div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">DNI / CUIL *</label>
+                                    <input type="text" class="form-control" id="cli_dni">
+                                    <div class="invalid-feedback" id="error_cli_dni">Falta el DNI/CUIL (4 a 20 números).
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Teléfono *</label>
+                                    <input type="text" class="form-control" id="cli_telefono">
+                                    <div class="invalid-feedback">Falta el teléfono.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Email *</label>
+                                    <input type="email" class="form-control" id="cli_email">
+                                    <div class="invalid-feedback" id="error_cli_email">Correo inválido o vacío.</div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold mt-2">Guardar Cliente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i>Editar Cliente
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formEditarCliente" novalidate>
+                            <input type="hidden" id="edit_cli_id">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Nombre *</label>
+                                    <input type="text" class="form-control" id="edit_cli_nombre">
+                                    <div class="invalid-feedback">Falta el nombre.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Apellido *</label>
+                                    <input type="text" class="form-control" id="edit_cli_apellido">
+                                    <div class="invalid-feedback">Falta el apellido.</div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">DNI / CUIL *</label>
+                                    <input type="text" class="form-control" id="edit_cli_dni">
+                                    <div class="invalid-feedback" id="error_edit_cli_dni">Falta el DNI/CUIL (4 a 20
+                                        números).</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Teléfono *</label>
+                                    <input type="text" class="form-control" id="edit_cli_telefono">
+                                    <div class="invalid-feedback">Falta el teléfono.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Email *</label>
+                                    <input type="email" class="form-control" id="edit_cli_email">
+                                    <div class="invalid-feedback" id="error_edit_cli_email">Correo inválido o vacío.
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold mt-2">Guardar Cambios</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <script>
+            // ==========================================
+            // LÓGICA DE VALIDACIÓN (TEXTOS ROJOS Y SWEETALERT)
+            // ==========================================
+            function validarFormulario(prefijo) {
+                let valido = true;
+                let camposFaltantes = [];
+
+                // Limpiamos los errores previos
+                const campos = ['nombre', 'apellido', 'dni', 'telefono', 'email'];
+                campos.forEach(c => document.getElementById(`${prefijo}_${c}`).classList.remove('is-invalid'));
+
+                // 1. Validar Nombre
+                const inpNombre = document.getElementById(`${prefijo}_nombre`);
+                if (!inpNombre.value.trim()) {
+                    inpNombre.classList.add('is-invalid');
+                    camposFaltantes.push('Nombre');
+                    valido = false;
+                }
+
+                // 2. Validar Apellido
+                const inpApellido = document.getElementById(`${prefijo}_apellido`);
+                if (!inpApellido.value.trim()) {
+                    inpApellido.classList.add('is-invalid');
+                    camposFaltantes.push('Apellido');
+                    valido = false;
+                }
+
+                // 3. Validar DNI (No vacío + Solo números 4 a 20 dígitos)
+                const inpDni = document.getElementById(`${prefijo}_dni`);
+                const dniVal = inpDni.value.trim();
+                if (!dniVal || !/^\d{4,20}$/.test(dniVal)) {
+                    inpDni.classList.add('is-invalid');
+                    camposFaltantes.push('DNI/CUIL');
+                    valido = false;
+                }
+
+                // 4. Validar Teléfono
+                const inpTel = document.getElementById(`${prefijo}_telefono`);
+                if (!inpTel.value.trim()) {
+                    inpTel.classList.add('is-invalid');
+                    camposFaltantes.push('Teléfono');
+                    valido = false;
+                }
+
+                // 5. Validar Email
+                const inpEmail = document.getElementById(`${prefijo}_email`);
+                const emailVal = inpEmail.value.trim();
+                if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                    inpEmail.classList.add('is-invalid');
+                    camposFaltantes.push('Email');
+                    valido = false;
+                }
+
+                // Disparar SweetAlert si hay errores
+                if (!valido) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Formulario Incompleto',
+                        html: `Por favor, revisa los campos en rojo.<br><br><b>Faltan o están incorrectos:</b><br>${camposFaltantes.join(', ')}`
+                    });
+                }
+
+                return valido;
+            }
+
+            // ==========================================
+            // 1. CREAR CLIENTE
+            // ==========================================
+            document.getElementById('formNuevoCliente').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // Ejecutamos la validación visual
+                if (!validarFormulario('cli')) return;
+
+                const datos = {
+                    nombre: document.getElementById('cli_nombre').value.trim(),
+                    apellido: document.getElementById('cli_apellido').value.trim(),
+                    dni_cuil: document.getElementById('cli_dni').value.trim(),
+                    telefono: document.getElementById('cli_telefono').value.trim(),
+                    email: document.getElementById('cli_email').value.trim()
+                };
+
+                fetch('/api/clientes/nuevo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                }).then(res => res.json()).then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire('¡Éxito!', data.message, 'success').then(() => location.reload());
+                    } else Swal.fire('Error', data.message, 'error');
+                });
+            });
+
+            // ==========================================
+            // 2. ABRIR MODAL EDITAR
+            // ==========================================
+            function abrirEditar(id, nombre, apellido, dni, tel, email) {
+                // Limpiar errores visuales al abrir el modal
+                const campos = ['nombre', 'apellido', 'dni', 'telefono', 'email'];
+                campos.forEach(c => document.getElementById(`edit_cli_${c}`).classList.remove('is-invalid'));
+
+                document.getElementById('edit_cli_id').value = id;
+                document.getElementById('edit_cli_nombre').value = nombre;
+                document.getElementById('edit_cli_apellido').value = apellido === 'null' ? '' : apellido;
+                document.getElementById('edit_cli_dni').value = dni === 'null' ? '' : dni;
+                document.getElementById('edit_cli_telefono').value = tel === 'null' ? '' : tel;
+                document.getElementById('edit_cli_email').value = email === 'null' ? '' : email;
+
+                new bootstrap.Modal(document.getElementById('modalEditarCliente')).show();
+            }
+
+            // ==========================================
+            // 3. GUARDAR EDICIÓN
+            // ==========================================
+            document.getElementById('formEditarCliente').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // Ejecutamos la validación visual
+                if (!validarFormulario('edit_cli')) return;
+
+                const datos = {
+                    id: document.getElementById('edit_cli_id').value,
+                    nombre: document.getElementById('edit_cli_nombre').value.trim(),
+                    apellido: document.getElementById('edit_cli_apellido').value.trim(),
+                    dni_cuil: document.getElementById('edit_cli_dni').value.trim(),
+                    telefono: document.getElementById('edit_cli_telefono').value.trim(),
+                    email: document.getElementById('edit_cli_email').value.trim()
+                };
+
+                fetch('/api/clientes/editar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                }).then(res => res.json()).then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire('¡Actualizado!', data.message, 'success').then(() => location.reload());
+                    } else Swal.fire('Atención', data.message, 'warning');
+                });
+            });
+
+            // ==========================================
+            // 4. BORRAR CLIENTE
+            // ==========================================
+            function borrarCliente(id, nombre) {
+                Swal.fire({
+                    title: '¿Eliminar cliente?',
+                    text: `Vas a dar de baja a ${nombre}. El historial de ventas seguirá intacto.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('/api/clientes/borrar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id })
+                        }).then(res => res.json()).then(data => {
+                            if (data.status === 'success') {
+                                Swal.fire('Eliminado', data.message, 'success').then(() => location.reload());
+                            } else Swal.fire('Error', data.message, 'error');
+                        });
+                    }
+                });
+            }
+        </script>
+</body>
+
+</html>
